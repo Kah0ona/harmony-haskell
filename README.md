@@ -22,4 +22,4 @@ Can print stuff like:
 	| | | | | |
 
 
-
+Also see this [blog post](http://kah0ona.github.io/software/haskell/2015/02/23/A-Journey-Into-Haskell-Chord-And-Scale-Library.html)
