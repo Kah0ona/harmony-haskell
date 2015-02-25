@@ -1,3 +1,32 @@
+module Harmony 
+( next
+, prev
+, noteAtInterval
+, createScale
+, majorScale
+, minorScale
+, minorTriad 
+, addedFourth
+, sixth
+, sixNine 
+, majorSeventh
+, cmaj7
+, noteAt
+, sizeOf
+, nextInScale
+, prevInScale
+, scaleContains
+, transpose
+, guitarString
+, standardTuning
+, dropDTuning
+, openGTuning
+, openDTuning
+, getPositionOfNotes
+, frets
+, fretdiagram
+) where
+
 import Data.List (intersperse)
 
 -- [A, A#, B, C, C#, D, D#, E, F, F#, G, G#]
@@ -9,7 +38,7 @@ import Data.List (intersperse)
 -- [0, 1 , 2 ,3 , 4 ,5, 6 , 7, 8,  9 ,10,11,12]
 
 data Note = A | A' | B | C | C' | D | D' | E | F | F' | G | G' deriving (Show, Ord, Eq, Enum)
-newtype Scale a = Scale [a] deriving (Show)
+newtype Scale a = Scale [a] deriving (Show,Ord,Eq)
 
 instance Functor Scale where
     fmap f (Scale []) = Scale []
@@ -102,10 +131,19 @@ transpose s 0 = s
 transpose s n = fmap (\note -> noteAtInterval note n) s
 
 guitarString :: Note -> Scale Note
-guitarString root = createScale root $ [0..12] ++ [0..12]
+guitarString root = createScale root [0..20]
 
-guitarStandardTuning :: [Scale Note]
-guitarStandardTuning = map guitarString [E,A,D,G,B,E]
+standardTuning :: [Scale Note]
+standardTuning = map guitarString [E,A,D,G,B,E]
+
+dropDTuning :: [Scale Note]
+dropDTuning = map guitarString [D,A,D,G,B,E]
+
+openGTuning :: [Scale Note]
+openGTuning = map guitarString [D,G,D,G,B,D]
+
+openDTuning :: [Scale Note]
+openDTuning = map guitarString [D,A,D,F',A,D]
 
 -- return list of indices of a scale that have a note contained in the supplied Scale Note
 -- counting starts at 0
@@ -126,10 +164,10 @@ listofzeroes length = [0] ++ listofzeroes (length-1)
 -- The specified tuning is just a list of scales, use chromatic scales to represent a normal guitar
 -- Hint: use built-in `guitarStandardTuning` to get [E,A,D,G,B,E]
 -- Or use map guitarString [D,A,D,G,A,D] to get another tuning
-frets :: (Scale Note) -> [Scale Note] -> [Int]
-frets (Scale []) strings  = listofzeroes (length strings) 
-frets _ [] = []
-frets chord strings = map (\string -> head $ getPositionOfNotes string chord) strings
+frets :: (Scale Note) -> [Scale Note] -> Int -> [Int]
+frets (Scale []) strings minimumFret = listofzeroes (minimumFret + (length strings)) 
+frets _ [] _ = []
+frets chord strings minimumFret = map (\string -> head $ filter (>= minimumFret) (getPositionOfNotes string chord)) strings
 
 fretfoldfunction :: Int -> [Char] -> [Char]
 fretfoldfunction 0 result = "| " ++ result  
@@ -145,27 +183,14 @@ getDiagramGrid result list n =
 						in 
 							getDiagramGrid (toAdd : result) list (n-1)
 
-fretdiagram :: (Scale Note) -> [Scale Note] -> [Char]
-fretdiagram chord tuning =
+fretdiagram :: (Scale Note) -> [Scale Note] -> Int -> [Char]
+fretdiagram chord tuning minimumFret =
 				let 
-					indices = frets chord tuning
+					indices = frets chord tuning minimumFret 
 					divider = "===========\n"
 					header = "\n" ++ (join " " (map show indices)) ++ "\n"
-					grid = getDiagramGrid [] indices (length indices)
+					grid = getDiagramGrid [] indices (minimumFret + (length indices))
 					fretrows = map fretrow grid
 				in
 					header ++ divider ++ (join "\n" fretrows) ++ "\n\n"
 
---fretdiagram indices = map
--- An Am chord in ascii
--- E A D G B e
---  
--- 0 0 2 2 1 0     Fretnum
--- ===========
--- | | | | o |     1
--- | | o o | |     2
--- | | | | | |     3
--- | | | | | |     4
--- | | | | | |     5
--- | | | | | |
--- | | | | | |
